@@ -25,7 +25,6 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 
-/* The lit field behind the lighthouse. It fades to near black when the light dies. */
 .field{
   position:fixed;inset:0;
   background:radial-gradient(125% 100% at 50% 36%, #0E7C66 0%, #0A4B3D 52%, #0B0F0E 100%);
@@ -36,8 +35,6 @@ body{
 .scene{position:relative;text-align:center;padding:24px}
 .scene svg{display:block;margin:0 auto;height:min(46vh,400px);width:auto;overflow:visible}
 
-/* The beam. A lamp that turns about its vertical axis throws a beam that, seen from the shore, sweeps
-   from one side to the other and back. scaleX about the lamp does that. */
 .beam{
   transform-box:view-box;
   transform-origin:32px 24.5px;
@@ -48,7 +45,6 @@ body{
   50%{transform:scaleX(1);opacity:.9}
   100%{transform:scaleX(-1);opacity:.9}
 }
-/* The splutter: the lamp and the beam stutter, then go out. */
 .lamp,.halo{animation:die 1.3s steps(1,end) 3.9s forwards}
 @keyframes die{
   0%{opacity:1}
@@ -64,7 +60,6 @@ body{
   100%{opacity:0}
 }
 
-/* The 404, glowing in the dark once the light has gone. */
 .code{
   margin:-10px 0 0;
   font-weight:800;
@@ -122,27 +117,24 @@ body{
         <stop offset="1" stop-color="#0E7C66" stop-opacity="0"/>
       </radialGradient>
     </defs>
-    <!-- the beam, anchored on the lamp -->
     <polygon class="beam" points="32,24.5 84,13 84,36" fill="url(#bg)"/>
-    <!-- the lamp and its halo -->
     <circle class="halo" cx="32" cy="24.5" r="7.5" fill="url(#hg)"/>
     <circle class="lamp" cx="32" cy="24.5" r="1.7" fill="#8FF0D2"/>
-    <!-- the lighthouse, the site's own mark drawn large -->
     <g fill="none" stroke="#E6EAE8" stroke-linecap="round" stroke-linejoin="round">
-      <polygon points="24.00,9.80 24.89,13.11 28.20,14.00 24.89,14.89 24.00,18.20 23.11,14.89 19.80,14.00 23.11,13.11" stroke-width=".45"/>
-      <path d="M26.5 52 L29 29 H35 L37.5 52 Z" stroke-width=".75"/>
-      <line x1="28" y1="38" x2="36" y2="38" stroke-width=".5"/>
-      <line x1="27" y1="46" x2="37" y2="46" stroke-width=".5"/>
-      <path d="M24.5 29 H39.5" stroke-width=".75"/>
-      <path d="M26 29 v-2.2 M32 29 v-2.2 M38 29 v-2.2" stroke-width=".4"/>
-      <rect x="28.5" y="21.8" width="7" height="5.4" stroke-width=".6"/>
-      <path d="M28 21.8 Q32 16.4 36 21.8" stroke-width=".65"/>
-      <line x1="32" y1="16.6" x2="32" y2="14.4" stroke-width=".5"/>
-      <path d="M21.5 52 q3.7 -3 7.5 0 t7.5 0 t7.5 0" stroke-width=".5"/>
+      <polygon points="24.00,9.80 24.89,13.11 28.20,14.00 24.89,14.89 24.00,18.20 23.11,14.89 19.80,14.00 23.11,13.11" stroke-width="1.6"/>
+      <path d="M26.5 52 L29 29 H35 L37.5 52 Z" stroke-width="2.6"/>
+      <line x1="28" y1="38" x2="36" y2="38" stroke-width="1.7"/>
+      <line x1="27" y1="46" x2="37" y2="46" stroke-width="1.7"/>
+      <path d="M24.5 29 H39.5" stroke-width="2.6"/>
+      <path d="M26 29 v-2.2 M32 29 v-2.2 M38 29 v-2.2" stroke-width="1.3"/>
+      <rect x="28.5" y="21.8" width="7" height="5.4" stroke-width="2.1"/>
+      <path d="M28 21.8 Q32 16.4 36 21.8" stroke-width="2.3"/>
+      <line x1="32" y1="16.6" x2="32" y2="14.4" stroke-width="1.8"/>
+      <path d="M21.5 52 q3.7 -3 7.5 0 t7.5 0 t7.5 0" stroke-width="1.8"/>
     </g>
   </svg>
   <h1 class="code">404</h1>
-  <p class="msg">This page is not here</p>
+  <p class="msg">This page cannot be found</p>
   <a class="home" href="/">Back to arkhimedes.ai</a>
 </main>
 </html>
