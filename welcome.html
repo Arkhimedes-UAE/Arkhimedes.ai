@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome to Drydock</title>
+<!--
+  WHERE AN INVITE LINK LANDS.
+
+  This page is not part of the app and is not packed into it. It is uploaded to
+  arkhimedes.ai beside confirmed.html, which is where the sign-up confirmation
+  already goes. supabase/functions/invite-tester mints the invite link with this
+  page as its redirect, through INVITE_REDIRECT_URL on that function, so the
+  address can change without a deploy.
+
+  WHAT HAPPENS HERE. Supabase verifies the invite before it sends anybody here,
+  and puts the result in the part of the address after the hash, which never
+  leaves the browser. A good one carries a session; a spent or expired one
+  carries an error. This page reads which of the two it got, and either asks for
+  a password or says plainly what went wrong and what to do next.
+
+  THE THREE ENDINGS, all of them written down because somebody will hit each:
+    A fresh link. Choose a password, the account is finished, open Drydock.
+    A link used already. Says so, and says to sign in as normal.
+    A link too old. Says so, and says to ask for another.
+
+  Nothing is sent anywhere except to Supabase, to set the password and then to
+  end the sign-in the link started. The pass is kept for this tab only, in
+  session storage, so Reload and Back work; it is wiped from the address at
+  once and forgotten once the password is set (question 531, 23 Oct 2026).
+-->
+<style>
+  :root{color-scheme:light dark}
+  body{margin:0;font:16px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+       background:#0E2A24;color:#e9f2ef;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}
+  .card{width:100%;max-width:460px;background:#123830;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:28px}
+  h1{margin:0 0 6px;font-size:22px;font-weight:600}
+  p{margin:0 0 14px}
+  .quiet{color:#a9c9c0;font-size:14px}
+  label{display:block;margin:16px 0 6px;font-size:14px;color:#cfe6dd}
+  input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.22);
+        background:#0E2A24;color:#e9f2ef;font:inherit}
+  button{margin-top:18px;width:100%;padding:11px 14px;border-radius:8px;border:0;background:#B08D57;color:#1a1206;
+         font:inherit;font-weight:600;cursor:pointer}
+  button[disabled]{opacity:.55;cursor:default}
+  .bad{color:#ffb4a8}
+  .good{color:#8fe0c4}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1 id="hd">Welcome to Drydock</h1>
+  <div id="main"><p class="quiet">Checking your invitation...</p></div>
+</div>
+<script>
+(function(){
+  var SUPABASE_URL='https://vyoujrwajloavplokmqk.supabase.co';
+  var ANON='sb_publishable_q-BO48T3-aMhE3XjZVBlcw_HDRQmr3d';
+  var hd=document.getElementById('hd'), main=document.getElementById('main');
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  /* Everything after the hash, which the browser never sends to a server. */
+  function fromHash(){
+    var out={}, h=String(location.hash||'').replace(/^#/,'');
+    h.split('&').forEach(function(pair){
+      if(!pair) return;
+      var i=pair.indexOf('='), k=i<0?pair:pair.slice(0,i), v=i<0?'':pair.slice(i+1);
+      try{ out[decodeURIComponent(k)]=decodeURIComponent(v.replace(/\+/g,' ')); }catch(e){ /* silent on purpose: a part of the address that will not decode is a part this page cannot use, and the checks below treat a missing value exactly as they treat an unreadable one */ }
+    });
+    return out;
+  }
+
+  function say(title, html){ hd.textContent=title; main.innerHTML=html; }
+  function showDone(email){
+    say('You are set up',
+      '<p class="good">Your password is saved.</p>'+
+      '<p>Open Drydock and sign in with '+esc(email||'your email address')+' and the password you just chose.</p>'+
+      '<p class="quiet">You can close this page.</p>');
+  }
+
+  /* THE PASS LEAVES THE ADDRESS AT ONCE (CS-DD-32, CS-DD-46, CS-DD-47,
+     question 531, 23 Oct 2026). The link's one-time sign-in pass arrives after
+     the hash. It used to stay there, in the address bar and in the browser's
+     history, and the sign-in it carried was never ended, so anyone who read
+     that history later could take over the account.
+
+     Now the page reads the pass and wipes it from the address before anything
+     else. It keeps the pass for this tab only, in session storage, which is
+     not history and goes when the tab closes, so Reload and Back still find
+     it. Once the password is set the sign-in is ended and the pass forgotten;
+     only "this one is finished" is kept, so Back shows the same ending. An
+     invite left unfinished has its sign-in ended after 24 hours by the server
+     (migration 0078). */
+  var KEEP='dd_invite_pass';
+  function kept(){ try{ return JSON.parse(sessionStorage.getItem(KEEP)||'null'); }catch(e){ /* silent on purpose: session storage switched off or unreadable means nothing is kept, which the checks below treat as no pass */ return null; } }
+  function keep(v){ try{ if(v) sessionStorage.setItem(KEEP, JSON.stringify(v)); else sessionStorage.removeItem(KEEP); }catch(e){ /* silent on purpose: with session storage switched off, Reload simply finds no pass and says so, as the page did before */ } }
+
+  var q=fromHash();
+  if(location.hash){ try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){ /* silent on purpose: a browser that refuses to rewrite the address leaves it as it always was */ } }
+  if(q.access_token){
+    keep({ access_token:q.access_token, refresh_token:q.refresh_token||'', email:q.email||'' });
+  } else if(!(q.error || q.error_code || q.error_description)){
+    var was=kept();
+    if(was && was.done){ showDone(was.email); return; }
+    if(was && was.access_token){ q.access_token=was.access_token; q.email=was.email; }
+  }
+
+  if(q.error || q.error_code || q.error_description){
+    var d=String(q.error_description||q.error_code||q.error||'').toLowerCase();
+    if(d.indexOf('expired')>=0){
+      say('That invitation has expired',
+        '<p>Invitation links do not last for ever, and this one has run out.</p>'+
+        '<p class="quiet">Ask whoever invited you to send another. It takes them a moment.</p>');
+    } else {
+      say('That link has already been used',
+        '<p>An invitation link works once. If you have already set a password, open Drydock and sign in as normal.</p>'+
+        '<p class="quiet">If you never got as far as setting one, ask whoever invited you to send another.</p>');
+    }
+    return;
+  }
+
+  if(!q.access_token){
+    say('Nothing to set up here',
+      '<p>This page finishes an invitation, and there is no invitation in this address.</p>'+
+      '<p class="quiet">Open the link from your invitation email. If it will not work, ask for another.</p>');
+    return;
+  }
+
+  say('Choose a password',
+    '<p>Nearly done. Pick a password and your Drydock account is ready.</p>'+
+    '<label for="pw">Password</label><input id="pw" type="password" autocomplete="new-password">'+
+    '<label for="pw2">Type it again</label><input id="pw2" type="password" autocomplete="new-password">'+
+    '<div id="msg" class="quiet" style="margin-top:12px">At least ten characters.</div>'+
+    '<button id="go" type="button">Finish setting up</button>');
+
+  var pw=document.getElementById('pw'), pw2=document.getElementById('pw2'),
+      msg=document.getElementById('msg'), go=document.getElementById('go');
+
+  go.onclick=async function(){
+    var a=pw.value||'', b=pw2.value||'';
+    if(a.length<10){ msg.className='bad'; msg.textContent='That is too short. Use at least ten characters.'; return; }
+    if(a!==b){ msg.className='bad'; msg.textContent='Those two do not match. Type the same one twice.'; return; }
+    go.disabled=true; msg.className='quiet'; msg.textContent='Setting it...';
+    var r;
+    try{
+      r=await fetch(SUPABASE_URL+'/auth/v1/user',{
+        method:'PUT',
+        headers:{ apikey:ANON, Authorization:'Bearer '+q.access_token, 'Content-Type':'application/json' },
+        body:JSON.stringify({ password:a }),
+      });
+    }catch(e){
+      go.disabled=false; msg.className='bad';
+      msg.textContent='There is no connection just now, so the password was not set. Try again in a moment.';
+      return;
+    }
+    if(!r.ok){
+      var said=''; try{ var j=await r.json(); said=String(j.msg||j.error_description||j.message||''); }catch(e){ /* silent on purpose: a reply that will not read leaves no sentence to quote, and the words below still say what to do about it */ }
+      go.disabled=false; msg.className='bad';
+      msg.textContent=(said || 'The password was not set, the server answered '+r.status+'.')+' If it keeps happening, ask for another invitation.';
+      return;
+    }
+    /* The password is set, so the sign-in from the link is ended here. Its
+       pass is then spent wherever a copy of it might be. Only this session
+       ends; it is the only one an invited account has. */
+    try{
+      await fetch(SUPABASE_URL+'/auth/v1/logout?scope=local',{
+        method:'POST',
+        headers:{ apikey:ANON, Authorization:'Bearer '+q.access_token },
+      });
+    }catch(e){ /* silent on purpose: the password is already set, which is what the person came for. A sign-in that could not be ended here is no longer in the address, the history or this tab, which forgets it on the next line */ }
+    keep({ done:true, email:q.email||'' });
+    showDone(q.email);
+  };
+})();
+</script>
+</body>
+</html>
